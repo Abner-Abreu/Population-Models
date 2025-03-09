@@ -1,27 +1,18 @@
 import matplotlib.pyplot as plt
-import numpy as np
-
-def verhulst_model(r, x0, n_terms):
-    x = [x0]
-    for i in range(n_terms - 1):
-        x.append(r * x[-1] * (1 - x[-1]))
-    return x
-
+import src.models.verhulst_model as verhulst
 # Parámetros
-r = 3
-x0 = 0.3
+
 iteraciones = 40 # Reducido para mejor visualización
 
 # Generar datos
-x = verhulst_model(r, x0, iteraciones)
+x = verhulst.logistic_model(0.3,1000,100,50)
 
 plt.figure(figsize=(10, 6))
-plt.plot(x, 'bo', markersize=8, linestyle='none', label=f'r = {r}')
+plt.plot(x, 'bo', markersize=8, linestyle='none')
 
-# Configurar eje x para mostrar solo enteros
 plt.xlabel('Iteración (n)', fontsize=12)
-plt.ylabel('Población Normalizada', fontsize=12)
-plt.title('Modelo de Verhulst - Iteraciones', fontsize=14)
+plt.ylabel('Población', fontsize=12)
+plt.title('Modelo de Verhulst', fontsize=14)
 plt.grid(True, alpha=0.3)
 plt.legend()
 plt.show()
