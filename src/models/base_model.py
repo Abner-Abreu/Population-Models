@@ -2,6 +2,9 @@ from abc import ABC, abstractmethod
 
 class BasePopulationModel(ABC):
 
+    name = None
+    discrete = False
+
     @abstractmethod
     def get_parameters(self):
         pass
@@ -12,12 +15,4 @@ class BasePopulationModel(ABC):
 
     @abstractmethod
     def calculate(self, params, time):
-        pass
-
-    @abstractmethod
-    def get_name(self):
-        pass
-
-    @abstractmethod
-    def is_discrete(self):
         pass
