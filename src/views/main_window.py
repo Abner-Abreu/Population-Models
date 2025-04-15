@@ -73,7 +73,7 @@ class MainWindow(ctk.CTk):
         self.ax.axis('off')
 
     def update_model_options(self):
-        model_names = [model.name for model in self.models]
+        model_names = [model.get_name() for model in self.models]
         self.model_selector.configure(values=model_names)
         if model_names:
             self.model_selector.set(model_names[0])
@@ -81,7 +81,7 @@ class MainWindow(ctk.CTk):
 
     def on_model_selected(self, event=None):
         model_name = self.model_selector.get()
-        self.current_model = next(m for m in self.models if m.name == model_name)
+        self.current_model = next(m for m in self.models if m.get_name() == model_name)
 
         # Clean Parameters
         for widget in self.parameters_frame.winfo_children():
@@ -130,7 +130,7 @@ class MainWindow(ctk.CTk):
         self.ax.clear()
         self.ax.grid(True, linestyle='--', alpha=0.7)
 
-        if self.current_model.discrete:
+        if self.current_model.is_discrete():
             time_values = np.linspace(0, params['time'])
             p = self.current_model.calculate(params, time_values)
             self.plot_discrete(time_values, p)
@@ -139,7 +139,7 @@ class MainWindow(ctk.CTk):
             p = self.current_model.calculate(params, time_values)
             self.plot_continuous(time_values, p)
 
-        self.ax.set_title(self.current_model.name, fontsize=14)
+        self.ax.set_title(self.current_model.get_name(), fontsize=14)
         self.ax.set_xlabel('Tiempo', fontsize=12)
         self.ax.set_ylabel('Población', fontsize=12)
         self.canvas.draw()
