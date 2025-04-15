@@ -1,11 +1,15 @@
 import numpy as np
+from ddeint import ddeint
 from .base_model import BasePopulationModel
 
 
 class MalthusModel(BasePopulationModel):
-    name = "Modelo de Malthus"
+
     def get_parameters(self):
         return [('P0', 100), ('r', 0.1), ('time', 50)]
+
+    def get_name(self):
+        return "Modelo de Malthus"
 
     def validate_parameters(self, params):
         required = ['P0', 'r', 'time']
@@ -15,59 +19,73 @@ class MalthusModel(BasePopulationModel):
         p = params['P0'] * np.exp(params['r'] * time_values)
         return p
 
+    def is_discrete(self):
+        return False
+
 class DiscreteModel(BasePopulationModel):
-    name = "Modelo Logístico de Verhulst (Discreto)"
-    discrete = True
 
     def get_parameters(self):
-        return [('P0', 100), ('r', 0.1), ('K', 500), ('time', 50)]
+        return [('P0', 0.3), ('r', 3.75), ('time', 50)]
+
+    def get_name(self):
+        return "Modelo Logístico de Verhulst (Discreto)"
 
     def validate_parameters(self, params):
-        required = ['P0', 'r', 'K', 'time']
+        required = ['P0', 'r', 'time']
         return all(key in params for key in required)
 
     def calculate(self, params, time_values):
         p = np.zeros_like(time_values)
         p[0] = params['P0']
         for t in range(1, len(time_values)):
-            p[t] = p[t - 1] + params['r'] * p[t - 1] * (1 - p[t - 1] / params['K'])
+            p[t] = p[t-1] * params['r'] * (1 - p[t-1])
         return p
+
+    def is_discrete(self):
+        return True
+
 
 class LogisticModel(BasePopulationModel):
-    name = "Modelo Logístico de Verhulst (Contínuo)"
 
     def get_parameters(self):
         return [('P0', 100), ('r', 0.1), ('K', 500), ('time', 50)]
+
+    def get_name(self):
+        return "Modelo Logístico de Verhulst (Contínua)"
 
     def validate_parameters(self, params):
         required = ['P0', 'r', 'K', 'time']
         return all(key in params for key in required)
 
     def calculate(self, params, time_values):
-        dt = time_values[1] - time_values[0]
-        p = np.zeros_like(time_values)
-        p[0] = params['P0']
-        for t in range(1, len(time_values)):
-            dp = params['r'] * p[t - 1] * (1 - p[t - 1] / params['K']) * dt
-            p[t] = p[t - 1] + dp
+        p = params['K'] / (1 + (params['K'] / params['P0'] - 1) * np.exp(-1 * params['r'] * time_values))
         return p
 
+    def is_discrete(self):
+        return False
+
 class DelayedLogisticModel(BasePopulationModel):
-    name = "Modelo de Hutchinson"
+
     def get_parameters(self):
         return [('P0', 100), ('r', 0.4), ('K', 500), ('tau', 3), ('time', 50)]
+
+    def get_name(self):
+        return "Modelo de Hutchinson"
 
     def validate_parameters(self, params):
         required = ['P0', 'r', 'K', 'tau', 'time']
         return all(key in params for key in required)
 
     def calculate(self, params, time_values):
-        dt = time_values[1] - time_values[0]
-        tau_steps = int(params['tau'] / dt)
-        p = np.zeros_like(time_values)
-        p[:tau_steps + 1] = params['P0']
 
-        for t in range(tau_steps + 1, len(time_values)):
-            dp = params['r'] * p[t - 1] * (1 - p[t - tau_steps - 1] / params['K']) * dt
-            p[t] = p[t - 1] + dp
-        return p
+        def equation(p, t):
+            return params['r'] * p(t) * (1 - p(t - params['tau']) / params['K'])
+
+        def history(t):
+            return params['P0']
+
+        solution = ddeint(equation, history, time_values)
+        return solution.flatten()
+
+    def is_discrete(self):
+        return False
